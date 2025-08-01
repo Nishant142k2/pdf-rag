@@ -9,7 +9,7 @@ import { useUser } from '@clerk/nextjs';
 interface IMessage {
   role: 'assistant' | 'user';
   content?: string;
-  documents?: string[];
+  documents?: string[]; // Keep as string array for simplicity
   timestamp?: string;
 }
 
@@ -59,13 +59,31 @@ const ChatComponent: React.FC = () => {
       }
 
       const data = await res.json();
+      
+      // DEBUG: Log the response data
+      console.log('Backend response:', data);
+      console.log('Data type:', typeof data);
+      console.log('Data keys:', Object.keys(data || {}));
+
+      // Process documents - convert objects to strings to avoid rendering issues
+      const processedDocuments = (data?.sources || data?.documents || data?.refs) ? 
+        (data?.sources || data?.documents || data?.refs).map((doc: any) => {
+          // Handle both string and object formats - always return string
+          if (typeof doc === 'string') {
+            return doc;
+          }
+          // Convert object to string format
+          const title = doc.title || doc.source || 'Unknown source';
+          const page = doc.page ? ` (Page ${doc.page})` : '';
+          return `${title}${page}`;
+        }) : undefined;
 
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: data?.answer || 'Sorry, I couldn\'t generate a response.',
-          documents: data?.sources,
+          content: data?.answer || data?.response || data?.content || 'Sorry, I couldn\'t generate a response.',
+          documents: processedDocuments,
           timestamp: new Date().toLocaleTimeString(),
         },
       ]);
@@ -139,9 +157,11 @@ const ChatComponent: React.FC = () => {
               {msg.documents && msg.documents.length > 0 && (
                 <div className="mt-2 text-xs text-gray-600">
                   <div className="font-medium">Sources:</div>
-                  <ul className="list-disc list-inside">
+                  <ul className="list-disc list-inside space-y-1">
                     {msg.documents.map((doc, idx) => (
-                      <li key={idx} className="truncate">{doc}</li>
+                      <li key={idx} className="truncate">
+                        {doc}
+                      </li>
                     ))}
                   </ul>
                 </div>

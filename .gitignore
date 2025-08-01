@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+.env.*
+
+# FastAPI / Uvicorn logs
+*.log
+
+# MacOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Local development database / artifacts
+*.sqlite3
+*.db
+instance/
+
+# Pytest cache
+.pytest_cache/
+.coverage
+
+# Jupyter Notebooks (if using)
+.ipynb_checkpoints/
+
+# mypy / Pylint / coverage
+.mypy_cache/
+.pytype/
+coverage.xml
+
+# Node (if you have frontend in same repo)
+node_modules/
+dist/
+build/
+.next/
+out/
+
+# System files
+Thumbs.db
+server/.env

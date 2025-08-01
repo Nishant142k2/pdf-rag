@@ -15,6 +15,7 @@ router=APIRouter()
 
 @router.post("/chat/")
 async def ask_question(question: str = Form(...)):
+    
     try:
         logger.info(f"user query: {question}")
 

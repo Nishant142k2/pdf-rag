@@ -3,35 +3,60 @@
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import * as React from 'react';
-import { Bot } from 'lucide-react';
+import { Bot, Loader2 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 
 interface IMessage {
   role: 'assistant' | 'user';
   content?: string;
   documents?: string[];
+  timestamp?: string;
 }
 
 const ChatComponent: React.FC = () => {
   const [message, setMessage] = React.useState<string>('');
   const [messages, setMessages] = React.useState<IMessage[]>([]);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-  const { user } = useUser(); // ← Clerk user info
-  
+  const { user } = useUser();
+
+  // Auto-scroll to bottom when new messages arrive
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const handleSendChatMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || isLoading) return;
 
-    setMessages((prev) => [...prev, { role: 'user', content: message }]);
+    const userMessage = message.trim();
+    const timestamp = new Date().toLocaleTimeString();
+    
+    // Add user message immediately
+    setMessages((prev) => [...prev, { 
+      role: 'user', 
+      content: userMessage,
+      timestamp 
+    }]);
+    
+    setMessage("");
+    setIsLoading(true);
 
     try {
-      const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_BASE_URL}/chat`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      
+      // Create FormData to match your backend expectation
+      const formData = new FormData();
+      formData.append('question', userMessage);
+      
+      const res = await fetch(`${API_BASE_URL}/chat/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: message }),
+        body: formData, // Using FormData instead of JSON
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -39,57 +64,139 @@ const ChatComponent: React.FC = () => {
         ...prev,
         {
           role: 'assistant',
-          content: data?.answer,
+          content: data?.answer || 'Sorry, I couldn\'t generate a response.',
           documents: data?.sources,
+          timestamp: new Date().toLocaleTimeString(),
         },
       ]);
     } catch (error) {
       console.error("Chat error:", error);
+      
+      // Add error message to chat
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error while processing your message. Please try again.',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    setMessage("");
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendChatMessage();
+    }
   };
 
   return (
-    <div className="p-4 pb-20 max-w-2xl mx-auto">
-      <div className="space-y-4">
-        {messages.map((message, index) => (
+    <div className="flex flex-col h-screen max-w-2xl mx-auto">
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 && (
+          <div className="text-center text-gray-500 mt-8">
+            <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <p>Start a conversation by typing a message below.</p>
+          </div>
+        )}
+        
+        {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex items-start gap-3 ${
+              msg.role === 'user' ? 'justify-end' : 'justify-start'
+            }`}
           >
-            {message.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            {msg.role === 'assistant' && (
+              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
                 <Bot className="w-5 h-5 text-gray-600" />
               </div>
             )}
 
-            <div className={`rounded-xl px-4 py-2 max-w-sm break-words ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
-              {message.content}
+            <div className="flex flex-col max-w-sm">
+              <div
+                className={`rounded-xl px-4 py-2 break-words ${
+                  msg.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-900'
+                }`}
+              >
+                {msg.content}
+              </div>
+              
+              {msg.timestamp && (
+                <div className={`text-xs text-gray-500 mt-1 ${
+                  msg.role === 'user' ? 'text-right' : 'text-left'
+                }`}>
+                  {msg.timestamp}
+                </div>
+              )}
+              
+              {msg.documents && msg.documents.length > 0 && (
+                <div className="mt-2 text-xs text-gray-600">
+                  <div className="font-medium">Sources:</div>
+                  <ul className="list-disc list-inside">
+                    {msg.documents.map((doc, idx) => (
+                      <li key={idx} className="truncate">{doc}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
-            {message.role === 'user' && user?.imageUrl && (
+            {msg.role === 'user' && user?.imageUrl && (
               <img
                 src={user.imageUrl}
                 alt="User Profile"
                 width={32}
                 height={32}
-                className="rounded-full"
+                className="rounded-full flex-shrink-0"
               />
             )}
           </div>
         ))}
+        
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+              <Bot className="w-5 h-5 text-gray-600" />
+            </div>
+            <div className="bg-gray-100 rounded-xl px-4 py-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="fixed bottom-4 right-0 w-full px-4 flex gap-3 max-w-2xl mx-auto">
-        <Input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your message here"
-        />
-        <Button onClick={handleSendChatMessage} disabled={!message.trim()}>
-          Send
-        </Button>
+      {/* Input Area */}
+      <div className="border-t bg-black p-4">
+        <div className="flex gap-3">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message here"
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button 
+            onClick={handleSendChatMessage} 
+            disabled={!message.trim() || isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              'Send'
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -44,3 +44,4 @@ out/
 # System files
 Thumbs.db
 server/.env
+server/.env

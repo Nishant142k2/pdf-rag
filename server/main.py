@@ -13,7 +13,7 @@ app = FastAPI(title= "RAG API", description= "RAG API for PDF Reader", version= 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["https://pdf-rag-alpha.vercel.app/"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]

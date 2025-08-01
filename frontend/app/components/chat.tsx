@@ -5,7 +5,7 @@ import { Input } from '@/app/components/ui/input';
 import * as React from 'react';
 import { Bot, Loader2 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-
+import Image from 'next/image';
 interface IMessage {
   role: 'assistant' | 'user';
   content?: string;
@@ -169,7 +169,7 @@ const ChatComponent: React.FC = () => {
             </div>
 
             {msg.role === 'user' && user?.imageUrl && (
-              <img
+              <Image
                 src={user.imageUrl}
                 alt="User Profile"
                 width={32}

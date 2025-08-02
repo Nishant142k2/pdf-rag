@@ -5,7 +5,7 @@ import { Input } from '@/app/components/ui/input';
 import * as React from 'react';
 import { Bot, Loader2 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-import Image from 'next/image';
+
 interface IMessage {
   role: 'assistant' | 'user';
   content?: string;
@@ -112,32 +112,32 @@ const ChatComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto">
+    <div className="flex flex-col h-screen w-full max-w-2xl lg:max-w-4xl mx-auto">
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4">
         {messages.length === 0 && (
-          <div className="text-center text-gray-500 mt-8">
-            <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <p>Start a conversation by typing a message below.</p>
+          <div className="text-center text-gray-500 mt-6 sm:mt-8 px-4">
+            <Bot className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
+            <p className="text-sm sm:text-base">Start a conversation by typing a message below.</p>
           </div>
         )}
         
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex items-start gap-3 ${
+            className={`flex items-start gap-2 sm:gap-3 ${
               msg.role === 'user' ? 'justify-end' : 'justify-start'
             }`}
           >
             {msg.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-5 h-5 text-gray-600" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-3 h-3 sm:w-5 sm:h-5 text-gray-600" />
               </div>
             )}
 
-            <div className="flex flex-col max-w-sm">
+            <div className="flex flex-col max-w-[85%] sm:max-w-sm lg:max-w-md">
               <div
-                className={`rounded-xl px-4 py-2 break-words ${
+                className={`rounded-xl px-3 py-2 sm:px-4 sm:py-2 break-words text-sm sm:text-base ${
                   msg.role === 'user'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-900'
@@ -155,7 +155,7 @@ const ChatComponent: React.FC = () => {
               )}
               
               {msg.documents && msg.documents.length > 0 && (
-                <div className="mt-2 text-xs text-gray-600">
+                <div className="mt-2 text-xs sm:text-sm text-gray-600">
                   <div className="font-medium">Sources:</div>
                   <ul className="list-disc list-inside space-y-1">
                     {msg.documents.map((doc, idx) => (
@@ -169,12 +169,12 @@ const ChatComponent: React.FC = () => {
             </div>
 
             {msg.role === 'user' && user?.imageUrl && (
-              <Image
+              <img
                 src={user.imageUrl}
                 alt="User Profile"
                 width={32}
                 height={32}
-                className="rounded-full flex-shrink-0"
+                className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover"
               />
             )}
           </div>
@@ -182,12 +182,12 @@ const ChatComponent: React.FC = () => {
         
         {/* Loading indicator */}
         {isLoading && (
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-gray-600" />
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-200 flex items-center justify-center">
+              <Bot className="w-3 h-3 sm:w-5 sm:h-5 text-gray-600" />
             </div>
-            <div className="bg-gray-100 rounded-xl px-4 py-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="bg-gray-100 rounded-xl px-3 py-2 sm:px-4 sm:py-2">
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
             </div>
           </div>
         )}
@@ -196,24 +196,25 @@ const ChatComponent: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t bg-black p-4">
-        <div className="flex gap-3">
+      <div className="border-t bg-black p-3 sm:p-4">
+        <div className="flex gap-2 sm:gap-3">
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message here"
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 text-sm sm:text-base h-9 sm:h-10"
           />
           <Button 
             onClick={handleSendChatMessage} 
             disabled={!message.trim() || isLoading}
+            className="h-9 sm:h-10 px-3 sm:px-4"
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
             ) : (
-              'Send'
+              <span className="text-sm sm:text-base">Send</span>
             )}
           </Button>
         </div>
